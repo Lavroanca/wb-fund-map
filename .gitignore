@@ -1,0 +1,15 @@
+__pycache__/
+venv/
+*.log
+*.pyc
+*.pyo
+*.pyd
+.idea/
+*.swp
+
+# Secrets
+secrets/
+*.json
+
+# Secrets
+secrets/
