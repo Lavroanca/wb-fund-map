@@ -4,12 +4,60 @@
   <meta charset="UTF-8" />
   <title>Зоны WB + лоты Фонда имущества + Яндекс Маркет (MapLibre)</title>
   <style>
-    html, body, #map {
+    html, body {
       width: 100%;
       height: 100%;
       margin: 0;
       padding: 0;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
+    #map {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+    #layer-controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 10;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 6px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+      padding: 8px 10px;
+      min-width: 240px;
+      max-width: 280px;
+      font-size: 13px;
+    }
+    #layer-controls h3 {
+      margin: 0 0 6px 0;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    #layer-controls label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 3px 0;
+      cursor: pointer;
+    }
+    #layer-controls input[type="checkbox"] {
+      cursor: pointer;
+    }
+    #layer-controls .legend-color {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+    .legend-wb { background: rgba(255, 0, 255, 0.5); }
+    .legend-lot { background: #0066ff; }
+    .legend-nto { background: #ff7f00; }
+    .legend-match { background: #FFD700; }
   </style>
   <link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
@@ -18,6 +66,34 @@
 </head>
 <body>
 <div id="map"></div>
+<div id="layer-controls">
+  <h3>Слои</h3>
+  <label>
+    <input type="checkbox" id="toggle-wb-zones" checked />
+    <span class="legend-color legend-wb"></span>
+    <span>Зоны Wildberries</span>
+  </label>
+  <label>
+    <input type="checkbox" id="toggle-fund-lots-sale" checked />
+    <span class="legend-color legend-lot"></span>
+    <span>Лоты Фонда – покупка (без НТО)</span>
+  </label>
+  <label>
+    <input type="checkbox" id="toggle-fund-lots-rent" checked />
+    <span class="legend-color legend-lot"></span>
+    <span>Лоты Фонда – аренда (без НТО)</span>
+  </label>
+  <label>
+    <input type="checkbox" id="toggle-fund-lots-nto" checked />
+    <span class="legend-color legend-nto"></span>
+    <span>Права на НТО (Фонд)</span>
+  </label>
+  <label>
+    <input type="checkbox" id="toggle-matches" checked />
+    <span class="legend-color legend-match"></span>
+    <span>Совпадения: лоты внутри зон WB</span>
+  </label>
+</div>
 <script>
   const WB_STYLE_URL = 'https://wb-maps.wb.ru/api/tiles/style/lightberry-ru.json?key=a6BaPcWAU7k4TRMD6pXz';
   const LOTS_URL = 'lots.geojson'; // наши лоты фонда
@@ -35,6 +111,32 @@
   map.addControl(new maplibregl.NavigationControl(), 'top-left');
 
   // -----------------------------
+  // Вспомогательная функция для формирования корректной ссылки Фонда
+  // -----------------------------
+  function getFundLotUrl(props) {
+    const id = props && props.id;
+    if (!id) return null;
+
+    const categoryId = props.categoryId;
+    const objectTypeId = props.objectTypeId;
+
+    // Права на размещение НТО: отдельный раздел /realty/nto/<id>
+    // В данных Фонда это (categoryId, objectTypeId, typeId) = (12, 12, 2)
+    if (categoryId === 12 || objectTypeId === 12) {
+      return 'https://xn--80adfeoyeh6akig5e.xn--p1ai/realty/nto/' + id;
+    }
+
+    // Здания с земельным участком: отдельный раздел /realty/buildings/<id>
+    // Пример: id=5077, categoryId=3, objectTypeId=3
+    if (categoryId === 3 || objectTypeId === 3) {
+      return 'https://xn--80adfeoyeh6akig5e.xn--p1ai/realty/buildings/' + id;
+    }
+
+    // Остальные активные торги Фонда (недвижимость/участки)
+    return 'https://xn--80adfeoyeh6akig5e.xn--p1ai/realty/spaces/' + id;
+  }
+
+  // -----------------------------
   // ЛОТЫ ФОНДА + попадание в зоны WB
   // -----------------------------
 
@@ -47,18 +149,57 @@
       data: lotsData
     });
 
+    // Лоты Фонда – покупка (все категории, кроме НТО)
     map.addLayer({
-      id: 'fund-lots-layer',
+      id: 'fund-lots-sale',
       type: 'circle',
       source: 'fund-lots',
+      filter: ['all', ['!=', ['get', 'categoryId'], 12], ['==', ['get', 'typeId'], 1]],
+      paint: {
+        'circle-radius': 4,
+        'circle-color': '#0066ff',
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 1
+      }
+    });
+
+    // Лоты Фонда – аренда (все категории, кроме НТО)
+    map.addLayer({
+      id: 'fund-lots-rent',
+      type: 'circle',
+      source: 'fund-lots',
+      filter: ['all', ['!=', ['get', 'categoryId'], 12], ['==', ['get', 'typeId'], 2]],
+      paint: {
+        'circle-radius': 4,
+        'circle-color': '#3399ff',
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 1
+      }
+    });
+
+    // Права на НТО (отдельный подслой)
+    map.addLayer({
+      id: 'fund-lots-nto',
+      type: 'circle',
+      source: 'fund-lots',
+      filter: ['==', ['get', 'categoryId'], 12],
+      paint: {
+        'circle-radius': 4,
+        'circle-color': '#ff7f00',
+        'circle-stroke-color': '#ffffff',
+        'circle-stroke-width': 1
+      }
+    });
+
+    // Отдельный слой "совпадений" (жёлтые точки поверх синих/оранжевых)
+    map.addLayer({
+      id: 'fund-lots-matches',
+      type: 'circle',
+      source: 'fund-lots',
+      filter: ['==', ['get', 'inside_wb'], true],
       paint: {
         'circle-radius': 5,
-        'circle-color': [
-          'case',
-          ['==', ['get', 'inside_wb'], true], '#FFD700',   // жёлтый, если в зоне WB
-          ['==', ['get', 'inside_wb'], 'true'], '#FFD700',
-          '#0066ff'                                        // синий по умолчанию
-        ],
+        'circle-color': '#FFD700',
         'circle-stroke-color': '#ffffff',
         'circle-stroke-width': 1
       }
@@ -95,7 +236,13 @@
 
         console.log('Lots total:', lotsData.features.length, 'inside WB (client PIP):', insideCount);
 
+        // Обновляем источник с новым признаком inside_wb
         map.getSource('fund-lots').setData(lotsData);
+
+        // Обновляем фильтр слоя совпадений на случай, если inside_wb был undefined до этого
+        if (map.getLayer('fund-lots-matches')) {
+          map.setFilter('fund-lots-matches', ['==', ['get', 'inside_wb'], true]);
+        }
       } catch (e) {
         console.error('Error computing inside_wb:', e);
       }
@@ -166,21 +313,115 @@
 
     loadLotsAndComputeInsideWB().catch(err => console.error('Lots init error', err));
 
-    map.on('click', 'fund-lots-layer', (e) => {
-      const feature = e.features && e.features[0];
-      if (!feature) return;
-      const props = feature.properties || {};
-      const id = props.id;
-      if (!id) return;
-      const url = 'https://xn--80adfeoyeh6akig5e.xn--p1ai/realty/spaces/' + id;
-      window.open(url, '_blank');
+    // Клики по лотам фонда (учитываем NTO и обычную недвижимость)
+    function attachClickHandlers(layerId) {
+      map.on('click', layerId, (e) => {
+        const feature = e.features && e.features[0];
+        if (!feature) return;
+        const props = feature.properties || {};
+        const url = getFundLotUrl(props);
+        if (!url) return;
+        window.open(url, '_blank');
+      });
+
+      map.on('mouseenter', layerId, () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', layerId, () => {
+        map.getCanvas().style.cursor = '';
+      });
+    }
+
+    attachClickHandlers('fund-lots-sale');
+    attachClickHandlers('fund-lots-rent');
+    attachClickHandlers('fund-lots-nto');
+    attachClickHandlers('fund-lots-matches');
+
+    // -----------------------------
+    // Переключатели слоёв (чекбоксы)
+    // -----------------------------
+    const cbWbZones   = document.getElementById('toggle-wb-zones');
+    const cbFundSale  = document.getElementById('toggle-fund-lots-sale');
+    const cbFundRent  = document.getElementById('toggle-fund-lots-rent');
+    const cbFundNto   = document.getElementById('toggle-fund-lots-nto');
+    const cbMatches   = document.getElementById('toggle-matches');
+
+    function setLayerVisibility(layerId, visible) {
+      if (!map.getLayer(layerId)) return;
+      map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+    }
+
+    cbWbZones.addEventListener('change', () => {
+      const visible = cbWbZones.checked;
+      setLayerVisibility('wb-priority-zones-fill', visible);
+      setLayerVisibility('wb-priority-zones-outline', visible);
     });
 
-    map.on('mouseenter', 'fund-lots-layer', () => {
-      map.getCanvas().style.cursor = 'pointer';
+    function updateMatchesFilter() {
+      if (!map.getLayer('fund-lots-matches')) return;
+
+      const typeConditions = [];
+      if (cbFundSale.checked) {
+        typeConditions.push(['==', ['get', 'typeId'], 1]);
+      }
+      if (cbFundRent.checked) {
+        typeConditions.push(['==', ['get', 'typeId'], 2]);
+      }
+      if (cbFundNto.checked) {
+        typeConditions.push(['==', ['get', 'categoryId'], 12]);
+      }
+
+      let filter;
+      if (typeConditions.length) {
+        filter = ['all', ['==', ['get', 'inside_wb'], true], ['any', ...typeConditions]];
+      } else {
+        // нет ни одной включённой группы лотов — формальный фильтр, слой всё равно будет скрыт
+        filter = ['==', ['get', 'inside_wb'], true];
+      }
+      map.setFilter('fund-lots-matches', filter);
+    }
+
+    function ensureMatchesConsistency() {
+      // Если все группы лотов скрыты — прячем совпадения и сбрасываем чекбокс
+      if (!cbFundSale.checked && !cbFundRent.checked && !cbFundNto.checked) {
+        setLayerVisibility('fund-lots-matches', false);
+        cbMatches.checked = false;
+      } else if (cbMatches.checked) {
+        // Если совпадения включены и есть хотя бы один видимый тип лотов — показываем и обновляем фильтр
+        setLayerVisibility('fund-lots-matches', true);
+        updateMatchesFilter();
+      }
+    }
+
+    cbFundSale.addEventListener('change', () => {
+      const visible = cbFundSale.checked;
+      setLayerVisibility('fund-lots-sale', visible);
+      ensureMatchesConsistency();
     });
-    map.on('mouseleave', 'fund-lots-layer', () => {
-      map.getCanvas().style.cursor = '';
+
+    cbFundRent.addEventListener('change', () => {
+      const visible = cbFundRent.checked;
+      setLayerVisibility('fund-lots-rent', visible);
+      ensureMatchesConsistency();
+    });
+
+    cbFundNto.addEventListener('change', () => {
+      const visible = cbFundNto.checked;
+      setLayerVisibility('fund-lots-nto', visible);
+      ensureMatchesConsistency();
+    });
+
+    cbMatches.addEventListener('change', () => {
+      const visible = cbMatches.checked;
+      // если совпадения включены, но все группы лотов выключены — включим покупку
+      if (visible && !cbFundSale.checked && !cbFundRent.checked && !cbFundNto.checked) {
+        cbFundSale.checked = true;
+        setLayerVisibility('fund-lots-sale', true);
+      }
+      setLayerVisibility('fund-lots-matches', visible);
+      if (visible) {
+        updateMatchesFilter();
+      }
     });
   });
 </script>
