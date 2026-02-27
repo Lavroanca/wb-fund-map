@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <title>Зоны WB + лоты Фонда имущества (MapLibre)</title>
+  <title>Зоны WB + лоты Фонда имущества + Яндекс Маркет (MapLibre)</title>
   <style>
     html, body, #map {
       width: 100%;
@@ -13,12 +13,17 @@
   </style>
   <link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
+  <!-- Turf.js для точного point-in-polygon по реальным зонам WB -->
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 </head>
 <body>
 <div id="map"></div>
 <script>
   const WB_STYLE_URL = 'https://wb-maps.wb.ru/api/tiles/style/lightberry-ru.json?key=a6BaPcWAU7k4TRMD6pXz';
-  const LOTS_URL = 'lots.geojson'; // наш GeoJSON с лотами
+  const LOTS_URL = 'lots.geojson'; // наши лоты фонда
+
+  // локальный прокси для Яндекс.Маркета (слушает на 8001 порту)
+  const YM_PROXY_BASE = 'http://72.56.106.171:8001/ym_recommended_buildings';
 
   const map = new maplibregl.Map({
     container: 'map',
@@ -29,11 +34,17 @@
 
   map.addControl(new maplibregl.NavigationControl(), 'top-left');
 
-  map.on('load', () => {
-    // 1) Источник с лотами фонда
+  // -----------------------------
+  // ЛОТЫ ФОНДА + попадание в зоны WB
+  // -----------------------------
+
+  async function loadLotsAndComputeInsideWB() {
+    const resp = await fetch(LOTS_URL);
+    const lotsData = await resp.json();
+
     map.addSource('fund-lots', {
       type: 'geojson',
-      data: LOTS_URL
+      data: lotsData
     });
 
     map.addLayer({
@@ -44,16 +55,140 @@
         'circle-radius': 5,
         'circle-color': [
           'case',
-          ['==', ['get', 'inside_wb'], true], '#ff0000',
-          ['==', ['get', 'inside_wb'], 'true'], '#ff0000',
-          '#0066ff'
+          ['==', ['get', 'inside_wb'], true], '#FFD700',   // жёлтый, если в зоне WB
+          ['==', ['get', 'inside_wb'], 'true'], '#FFD700',
+          '#0066ff'                                        // синий по умолчанию
         ],
         'circle-stroke-color': '#ffffff',
         'circle-stroke-width': 1
       }
     });
 
-    // 2) Источник с полигонами зон WB напрямую из их тайлов
+    map.once('idle', () => {
+      try {
+        const zoneFeatures = map.querySourceFeatures('wb-priority-zones', {
+          sourceLayer: 'data.priority_zone_united'
+        });
+
+        const zones = zoneFeatures.map(f => ({
+          type: 'Feature',
+          geometry: f.geometry,
+          properties: {}
+        }));
+
+        console.log('WB zones features for PIP:', zones.length);
+
+        let insideCount = 0;
+        lotsData.features.forEach(feat => {
+          if (!feat.geometry || feat.geometry.type !== 'Point') return;
+          let inside = false;
+          for (let i = 0; i < zones.length; i++) {
+            if (turf.booleanPointInPolygon(feat, zones[i])) {
+              inside = true;
+              break;
+            }
+          }
+          feat.properties = feat.properties || {};
+          feat.properties.inside_wb = inside;
+          if (inside) insideCount++;
+        });
+
+        console.log('Lots total:', lotsData.features.length, 'inside WB (client PIP):', insideCount);
+
+        map.getSource('fund-lots').setData(lotsData);
+      } catch (e) {
+        console.error('Error computing inside_wb:', e);
+      }
+    });
+  }
+
+  // -----------------------------
+  // ЯНДЕКС МАРКЕТ: точки LIGHTNING (до 400k) через локальный прокси
+  // -----------------------------
+
+  async function fetchYandexLightning() {
+    const bounds = map.getBounds();
+    const minLat = bounds.getSouth();
+    const maxLat = bounds.getNorth();
+    const minLon = bounds.getWest();
+    const maxLon = bounds.getEast();
+    const zoom = Math.round(map.getZoom());
+
+    const url = new URL(YM_PROXY_BASE);
+    url.searchParams.set('zoom', String(zoom));
+    url.searchParams.set('minLat', String(minLat));
+    url.searchParams.set('maxLat', String(maxLat));
+    url.searchParams.set('minLon', String(minLon));
+    url.searchParams.set('maxLon', String(maxLon));
+
+    console.log('YM proxy fetch:', url.toString());
+    const resp = await fetch(url.toString());
+    if (!resp.ok) {
+      console.error('YM proxy error:', resp.status, await resp.text());
+      return { type: 'FeatureCollection', features: [] };
+    }
+    const data = await resp.json();
+
+    // data: [{id, lat, lon, type}] — берём только LIGHTNING
+    const features = (data || [])
+      .filter(item => item && item.type === 'LIGHTNING')
+      .map(item => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [item.lon, item.lat],
+        },
+        properties: {
+          id: item.id,
+          type: item.type,
+        },
+      }));
+
+    console.log('YM LIGHTNING points:', features.length);
+
+    return {
+      type: 'FeatureCollection',
+      features,
+    };
+  }
+
+  async function initYandexLightningLayer() {
+    map.addSource('ym-lightning', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    });
+
+    map.addLayer({
+      id: 'ym-lightning-layer',
+      type: 'circle',
+      source: 'ym-lightning',
+      paint: {
+        'circle-radius': 6,
+        'circle-color': 'rgba(255, 215, 0, 0.7)',        // мягкий золотой
+        'circle-stroke-color': 'rgba(0, 0, 0, 0.3)',
+        'circle-stroke-width': 1,
+      }
+    });
+
+    try {
+      const fc = await fetchYandexLightning();
+      map.getSource('ym-lightning').setData(fc);
+    } catch (e) {
+      console.error('YM init error:', e);
+    }
+
+    map.on('moveend', async () => {
+      try {
+        const fc = await fetchYandexLightning();
+        map.getSource('ym-lightning').setData(fc);
+      } catch (e) {
+        console.error('YM moveend error:', e);
+      }
+    });
+  }
+
+  map.on('load', () => {
+    // 1) Источник с полигонами зон WB напрямую из их тайлов
     map.addSource('wb-priority-zones', {
       type: 'vector',
       tiles: [
@@ -63,7 +198,6 @@
       maxzoom: 16
     });
 
-    // 3) Слой полигонов зон WB
     map.addLayer({
       id: 'wb-priority-zones-fill',
       type: 'fill',
@@ -75,7 +209,6 @@
       }
     });
 
-    // 4) Контур зон, чтобы лучше читались
     map.addLayer({
       id: 'wb-priority-zones-outline',
       type: 'line',
@@ -87,20 +220,17 @@
       }
     });
 
-    // popup по клику на лот
-    const popup = new maplibregl.Popup({ closeButton: true, closeOnClick: true });
+    loadLotsAndComputeInsideWB().catch(err => console.error('Lots init error', err));
+    initYandexLightningLayer().catch(err => console.error('YM layer error', err));
 
     map.on('click', 'fund-lots-layer', (e) => {
       const feature = e.features && e.features[0];
       if (!feature) return;
-      const coords = feature.geometry.coordinates.slice();
       const props = feature.properties || {};
-
-      popup
-        .setLngLat(coords)
-        .setHTML('<pre style="max-width: 320px; white-space: pre-wrap;">' +
-                 JSON.stringify(props, null, 2) + '</pre>')
-        .addTo(map);
+      const id = props.id;
+      if (!id) return;
+      const url = 'https://xn--80adfeoyeh6akig5e.xn--p1ai/realty/spaces/' + id;
+      window.open(url, '_blank');
     });
 
     map.on('mouseenter', 'fund-lots-layer', () => {

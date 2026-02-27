@@ -1,0 +1,13 @@
+[Unit]
+Description=Yandex Market recommended-buildings proxy
+After=network.target
+
+[Service]
+WorkingDirectory=/home/lavr/.openclaw/workspace
+ExecStart=/home/lavr/.openclaw/venv/bin/python /home/lavr/.openclaw/workspace/ym_proxy.py 8001
+Restart=always
+User=lavr
+Group=lavr
+
+[Install]
+WantedBy=multi-user.target
