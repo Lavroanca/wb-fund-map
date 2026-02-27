@@ -87,6 +87,37 @@ def main() -> None:
                 continue
 
             props = {k: it.get(k) for k in FIELDS}
+
+            # Дополнительные вычисляемые поля
+            # startingPrice в примечаниях указан как годовая арендная плата,
+            # для аренды считаем месячную и цену за м² в месяц.
+            try:
+                starting_price_raw = it.get("startingPrice")
+                starting_price = float(starting_price_raw) if starting_price_raw is not None else None
+            except Exception:
+                starting_price = None
+
+            total_area = it.get("totalArea")
+            try:
+                total_area_f = float(total_area) if total_area is not None else None
+            except Exception:
+                total_area_f = None
+
+            type_id = it.get("typeId")
+
+            price_per_m2_month = None
+            price_month = None
+            if starting_price is not None and total_area_f and total_area_f > 0:
+                if type_id == 2:
+                    # аренда: исходно годовая ставка -> приводим к месячной
+                    price_month = starting_price / 12.0
+                    price_per_m2_month = price_month / total_area_f
+
+            if price_month is not None:
+                props["startingPriceMonth"] = round(price_month, 2)
+            if price_per_m2_month is not None:
+                props["pricePerM2Month"] = round(price_per_m2_month, 2)
+
             feature = {
                 "type": "Feature",
                 "geometry": {

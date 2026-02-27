@@ -21,43 +21,194 @@
     }
     #layer-controls {
       position: absolute;
-      top: 10px;
-      right: 10px;
+      top: 12px;
+      right: 12px;
       z-index: 10;
-      background: rgba(255, 255, 255, 0.95);
-      border-radius: 6px;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
-      padding: 8px 10px;
-      min-width: 240px;
-      max-width: 280px;
+      background: rgba(15, 23, 42, 0.96); /* тёмное стекло */
+      transition: transform 0.2s ease;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-radius: 12px;
+      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.45);
+      padding: 10px 12px 12px;
+      min-width: 260px;
+      max-width: 300px;
       font-size: 13px;
+      color: #e5e7eb;
+      border: 1px solid rgba(148, 163, 184, 0.35);
     }
     #layer-controls h3 {
-      margin: 0 0 6px 0;
-      font-size: 13px;
+      margin: 0 0 4px 0;
+      font-size: 12px;
       font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9ca3af;
+    }
+    #layer-controls .section-title {
+      margin-top: 6px;
+      margin-bottom: 2px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6b7280;
+    }
+    #layer-controls .layer-group {
+      border-radius: 8px;
+      padding: 4px 6px;
+      background: radial-gradient(circle at top left, rgba(96,165,250,0.15), transparent 60%);
+      margin-top: 4px;
+    }
+    #layer-controls .layer-group + .layer-group {
+      margin-top: 6px;
+      background: radial-gradient(circle at top left, rgba(248,250,252,0.03), transparent 60%);
     }
     #layer-controls label {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 6px;
       margin: 3px 0;
       cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: background 0.15s ease, transform 0.05s ease;
+    }
+    #layer-controls .layer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin: 3px 0;
+      padding: 4px 6px;
+      border-radius: 6px;
+      transition: background 0.15s ease, transform 0.05s ease;
+    }
+    #layer-controls label:hover,
+    #layer-controls .layer-row:hover {
+      background: rgba(249, 250, 251, 0.06);
+    }
+    #layer-controls label:active,
+    #layer-controls .layer-row:active {
+      transform: translateY(1px);
+    }
+    #layer-controls .layer-main {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    #layer-controls .layer-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #e5e7eb;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+    #layer-controls .layer-sub {
+      font-size: 11px;
+      color: #9ca3af;
     }
     #layer-controls input[type="checkbox"] {
       cursor: pointer;
+      width: 32px;
+      height: 18px;
+      appearance: none;
+      -webkit-appearance: none;
+      background: rgba(30, 64, 175, 0.55);
+      border-radius: 999px;
+      position: relative;
+      outline: none;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    #layer-controls input[type="checkbox"]::before {
+      content: '';
+      position: absolute;
+      top: 1px;
+      left: 1px;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: #f9fafb;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.4);
+      transition: transform 0.15s ease;
+    }
+    #layer-controls input[type="checkbox"]:checked {
+      background: linear-gradient(135deg, #38bdf8, #6366f1);
+      border-color: rgba(191, 219, 254, 0.9);
+    }
+    #layer-controls input[type="checkbox"]:checked::before {
+      transform: translateX(12px);
     }
     #layer-controls .legend-color {
       width: 10px;
       height: 10px;
-      border-radius: 50%;
+      border-radius: 999px;
       flex-shrink: 0;
-      border: 1px solid rgba(0,0,0,0.1);
+      border: 1px solid rgba(15,23,42,0.7);
+      box-shadow: 0 0 0 1px rgba(15,23,42,0.45);
     }
-    .legend-wb { background: rgba(255, 0, 255, 0.5); }
-    .legend-lot { background: #0066ff; }
-    .legend-nto { background: #ff7f00; }
-    .legend-match { background: #FFD700; }
+    .legend-wb { background: rgba(244, 114, 182, 0.9); }
+    .legend-lot { background: #60a5fa; }
+    .legend-nto { background: #fb923c; }
+    .legend-match { background: #facc15; }
+
+    /* стили попапа MapLibre под общую тёмную тему */
+    .maplibregl-popup {
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    .maplibregl-popup-content {
+      background: transparent !important;
+      padding: 0 !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    .maplibregl-popup-tip {
+      display: none !important;
+    }
+    .maplibregl-popup-close-button {
+      display: none !important;
+    }
+    .maplibregl-popup-anchor-top,
+    .maplibregl-popup-anchor-bottom,
+    .maplibregl-popup-anchor-center,
+    .maplibregl-popup-anchor-left,
+    .maplibregl-popup-anchor-right {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+
+    /* кнопка сворачивания панели слоёв */
+    #layer-toggle-btn {
+      position: absolute;
+      top: 65%;
+      right: 12px;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 40px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.96);
+      border: 1px solid rgba(148,163,184,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #9ca3af;
+      font-size: 12px;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(15,23,42,0.5);
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    #layer-toggle-btn:hover {
+      background: rgba(15,23,42,1);
+      color: #e5e7eb;
+    }
   </style>
   <link href="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.css" rel="stylesheet" />
   <script src="https://unpkg.com/maplibre-gl@3.6.1/dist/maplibre-gl.js"></script>
@@ -66,37 +217,101 @@
 </head>
 <body>
 <div id="map"></div>
+<div id="layer-toggle-btn">❯</div>
 <div id="layer-controls">
   <h3>Слои</h3>
-  <label>
-    <input type="checkbox" id="toggle-wb-zones" checked />
-    <span class="legend-color legend-wb"></span>
-    <span>Зоны Wildberries</span>
-  </label>
-  <label>
-    <input type="checkbox" id="toggle-fund-lots-sale" checked />
-    <span class="legend-color legend-lot"></span>
-    <span>Лоты Фонда – покупка (без НТО)</span>
-  </label>
-  <label>
-    <input type="checkbox" id="toggle-fund-lots-rent" checked />
-    <span class="legend-color legend-lot"></span>
-    <span>Лоты Фонда – аренда (без НТО)</span>
-  </label>
-  <label>
-    <input type="checkbox" id="toggle-fund-lots-nto" checked />
-    <span class="legend-color legend-nto"></span>
-    <span>Права на НТО (Фонд)</span>
-  </label>
-  <label>
-    <input type="checkbox" id="toggle-matches" checked />
-    <span class="legend-color legend-match"></span>
-    <span>Совпадения: лоты внутри зон WB</span>
-  </label>
+  <div class="section-title">Зоны маркетплейса</div>
+  <div class="layer-group">
+    <label>
+      <div class="layer-main">
+        <span class="legend-color legend-wb"></span>
+        <div>
+          <div class="layer-name">Зоны Wildberries</div>
+          <div class="layer-sub">официальные приоритетные зоны WB</div>
+        </div>
+      </div>
+      <input type="checkbox" id="toggle-wb-zones" checked />
+    </label>
+  </div>
+
+  <div class="section-title">Лоты Фонда имущества</div>
+  <div class="layer-group">
+    <label>
+      <div class="layer-main">
+        <span class="legend-color legend-lot"></span>
+        <div>
+          <div class="layer-name">Покупка</div>
+          <div class="layer-sub">объекты Фонда, выставленные на продажу</div>
+        </div>
+      </div>
+      <input type="checkbox" id="toggle-fund-lots-sale" checked />
+    </label>
+    <div class="layer-row">
+      <div class="layer-main" id="rent-layer-main">
+        <span class="legend-color legend-lot"></span>
+        <div>
+          <div class="layer-name">Аренда</div>
+          <div class="layer-sub">объекты Фонда, сдаваемые в аренду</div>
+        </div>
+        <span id="rent-layer-chevron" style="margin-left:4px; font-size:12px; color:#9ca3af;">▾</span>
+      </div>
+      <label>
+        <input type="checkbox" id="toggle-fund-lots-rent" checked />
+      </label>
+    </div>
+    <div id="rent-filters-panel" style="display:none; margin:4px 4px 2px 18px; padding:6px 8px; border-radius:6px; background:rgba(15,23,42,0.85); border:1px solid rgba(148,163,184,0.4);">
+      <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:#9ca3af; margin-bottom:4px;">Фильтры аренды</div>
+      <div style="display:flex; flex-direction:column; gap:4px; font-size:12px; color:#e5e7eb;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <span>Самовольная перепланировка</span>
+          <select id="rent-replan-filter" style="background:#020617; color:#e5e7eb; border-radius:6px; border:1px solid rgba(148,163,184,0.6); padding:2px 6px; font-size:11px;">
+            <option value="any">Любая</option>
+            <option value="no">Без перепланировки</option>
+            <option value="yes">Только с перепланировкой</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <span>Этаж</span>
+          <select id="rent-floor-filter" style="background:#020617; color:#e5e7eb; border-radius:6px; border:1px solid rgba(148,163,184,0.6); padding:2px 6px; font-size:11px;">
+            <option value="any">Любой</option>
+            <option value="basement">Подвал</option>
+            <option value="semi">Цоколь</option>
+            <option value="1">1 этаж</option>
+            <option value=">=2">Выше 1-го</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <label>
+      <div class="layer-main">
+        <span class="legend-color legend-nto"></span>
+        <div>
+          <div class="layer-name">Права на НТО</div>
+          <div class="layer-sub">нестационарные торговые объекты</div>
+        </div>
+      </div>
+      <input type="checkbox" id="toggle-fund-lots-nto" checked />
+    </label>
+  </div>
+
+  <div class="section-title">Совпадения</div>
+  <div class="layer-group">
+    <label>
+      <div class="layer-main">
+        <span class="legend-color legend-match"></span>
+        <div>
+          <div class="layer-name">Лоты внутри зон WB</div>
+          <div class="layer-sub">жёлтые точки = строгий PIP по полигонам WB</div>
+        </div>
+      </div>
+      <input type="checkbox" id="toggle-matches" checked />
+    </label>
+  </div>
 </div>
 <script>
   const WB_STYLE_URL = 'https://wb-maps.wb.ru/api/tiles/style/lightberry-ru.json?key=a6BaPcWAU7k4TRMD6pXz';
   const LOTS_URL = 'lots.geojson'; // наши лоты фонда
+  const FUND_DETAILS_URL = 'fund_lot_details.json'; // детали с карточек (этаж, примечания и т.п.)
 
   // будущие полигоны Яндекс.Маркета (GeoJSON, генерируется отдельным конвертером vmap3 -> GeoJSON)
   const YM_ZONES_URL = 'ym_zones.geojson';
@@ -105,7 +320,8 @@
     container: 'map',
     style: WB_STYLE_URL,
     center: [30.30, 59.93], // lon, lat (СПб)
-    zoom: 11
+    zoom: 11,
+    clickTolerance: 8
   });
 
   map.addControl(new maplibregl.NavigationControl(), 'top-left');
@@ -141,8 +357,46 @@
   // -----------------------------
 
   async function loadLotsAndComputeInsideWB() {
-    const resp = await fetch(LOTS_URL);
-    const lotsData = await resp.json();
+    const [lotsResp, detailsResp] = await Promise.all([
+      fetch(LOTS_URL),
+      fetch(FUND_DETAILS_URL).catch(() => null)
+    ]);
+
+    const lotsData = await lotsResp.json();
+    let details = {};
+    if (detailsResp && detailsResp.ok) {
+      try {
+        details = await detailsResp.json();
+      } catch (e) {
+        console.warn('Failed to parse fund_lot_details.json:', e);
+      }
+    }
+
+    // подмешиваем детали в свойства лотов (по id)
+    lotsData.features.forEach((feat) => {
+      const props = feat.properties || {};
+      const key = String(props.id ?? '');
+      const extra = details[key];
+      if (extra) {
+        if (extra.floor != null) props.floor = extra.floor;
+        if (extra.floorClass != null) props.floorClass = extra.floorClass;
+        if (typeof extra.has_unauthorized_replan === 'boolean') {
+          props.has_unauthorized_replan = extra.has_unauthorized_replan;
+        }
+        if (extra.notes) props.notes = extra.notes;
+      }
+      // признак "новый объект" по дате создания: последние 7 дней
+      const created = props.dateCreate;
+      if (created) {
+        const createdTime = Date.parse(created.replace(' ', 'T') + 'Z');
+        if (!Number.isNaN(createdTime)) {
+          const now = Date.now();
+          const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+          props.isNew = (now - createdTime) <= sevenDaysMs;
+        }
+      }
+      feat.properties = props;
+    });
 
     map.addSource('fund-lots', {
       type: 'geojson',
@@ -156,10 +410,22 @@
       source: 'fund-lots',
       filter: ['all', ['!=', ['get', 'categoryId'], 12], ['==', ['get', 'typeId'], 1]],
       paint: {
-        'circle-radius': 4,
-        'circle-color': '#0066ff',
-        'circle-stroke-color': '#ffffff',
-        'circle-stroke-width': 1
+        'circle-radius': 6,
+        'circle-color': [
+          'case',
+          ['==', ['get', 'isNew'], true], 'rgba(96, 165, 250, 1.0)',
+          '#0066ff'
+        ],
+        'circle-stroke-color': [
+          'case',
+          ['==', ['get', 'isNew'], true], 'rgba(191, 219, 254, 0.9)',
+          '#ffffff'
+        ],
+        'circle-stroke-width': [
+          'case',
+          ['==', ['get', 'isNew'], true], 2,
+          1
+        ]
       }
     });
 
@@ -170,10 +436,22 @@
       source: 'fund-lots',
       filter: ['all', ['!=', ['get', 'categoryId'], 12], ['==', ['get', 'typeId'], 2]],
       paint: {
-        'circle-radius': 4,
-        'circle-color': '#3399ff',
-        'circle-stroke-color': '#ffffff',
-        'circle-stroke-width': 1
+        'circle-radius': 6,
+        'circle-color': [
+          'case',
+          ['==', ['get', 'isNew'], true], 'rgba(96, 165, 250, 1.0)',
+          '#3399ff'
+        ],
+        'circle-stroke-color': [
+          'case',
+          ['==', ['get', 'isNew'], true], 'rgba(191, 219, 254, 0.9)',
+          '#ffffff'
+        ],
+        'circle-stroke-width': [
+          'case',
+          ['==', ['get', 'isNew'], true], 2,
+          1
+        ]
       }
     });
 
@@ -184,10 +462,22 @@
       source: 'fund-lots',
       filter: ['==', ['get', 'categoryId'], 12],
       paint: {
-        'circle-radius': 4,
-        'circle-color': '#ff7f00',
-        'circle-stroke-color': '#ffffff',
-        'circle-stroke-width': 1
+        'circle-radius': 6,
+        'circle-color': [
+          'case',
+          ['==', ['get', 'isNew'], true], 'rgba(252, 165, 165, 1.0)',
+          '#ff7f00'
+        ],
+        'circle-stroke-color': [
+          'case',
+          ['==', ['get', 'isNew'], true], 'rgba(254, 226, 226, 0.9)',
+          '#ffffff'
+        ],
+        'circle-stroke-width': [
+          'case',
+          ['==', ['get', 'isNew'], true], 2,
+          1
+        ]
       }
     });
 
@@ -320,8 +610,59 @@
         if (!feature) return;
         const props = feature.properties || {};
         const url = getFundLotUrl(props);
-        if (!url) return;
-        window.open(url, '_blank');
+        const address = props.address || '';
+        const area = props.totalArea;
+        const price = props.startingPrice;
+        const priceMonth = props.startingPriceMonth;
+        const pricePerM2Month = props.pricePerM2Month;
+        const floor = props.floor;
+        const hasReplan = props.has_unauthorized_replan;
+        const insideWb = props.inside_wb === true;
+
+        const typeId = props.typeId;
+        let tradeType = 'Продажа';
+        if (typeId === 2 || typeId === '2') tradeType = 'Аренда';
+
+        let html = '<div style="min-width: 260px; max-width: 320px; font-size: 12px; color:#e5e7eb;">';
+        html += '<div style="font-weight:600; margin-bottom:4px; white-space:normal; word-break:break-word;">' + (address || 'Объект Фонда') + '</div>';
+        html += '<div style="color:#9ca3af; margin-bottom:6px;">' + tradeType + (insideWb ? ' · внутри зоны WB' : '') + '</div>';
+
+        html += '<div style="margin-bottom:4px; white-space:normal; word-break:break-word;">';
+        if (area != null) {
+          html += '<div>Площадь: <strong>' + area + '</strong> м²</div>';
+        }
+        if (price != null) {
+          html += '<div>Начальная цена: <strong>' + price + '</strong></div>';
+        }
+        if (priceMonth != null) {
+          html += '<div>Цена в месяц: <strong>' + priceMonth + '</strong></div>';
+        }
+        if (pricePerM2Month != null) {
+          html += '<div>Цена за м²/мес: <strong>' + pricePerM2Month + '</strong></div>';
+        }
+        if (floor != null) {
+          html += '<div>Этаж: <strong>' + floor + '</strong></div>';
+        }
+        if (typeof hasReplan === 'boolean') {
+          const label = hasReplan ? 'Да' : 'Нет';
+          const color = hasReplan ? '#ef4444' : '#22c55e';
+          html += '<div>Самовольная перепланировка: <strong style="color:' + color + '">' + label + '</strong></div>';
+        }
+        html += '</div>';
+
+        if (url) {
+          html += '<div style="margin-top:8px;"><a href="' + url + '" target="_blank" style="color:#38bdf8; text-decoration:none; font-weight:500;">Открыть карточку лота ↗</a></div>';
+        }
+
+        html += '</div>';
+
+        new maplibregl.Popup({
+          closeOnClick: true,
+          maxWidth: '320px'
+        })
+          .setLngLat(feature.geometry.coordinates)
+          .setHTML('<div style="background:rgba(15,23,42,0.96); padding:8px 10px; border-radius:10px; border:1px solid rgba(148,163,184,0.45);">' + html + '</div>')
+          .addTo(map);
       });
 
       map.on('mouseenter', layerId, () => {
@@ -346,6 +687,20 @@
     const cbFundNto   = document.getElementById('toggle-fund-lots-nto');
     const cbMatches   = document.getElementById('toggle-matches');
 
+    const rentLayerMain = document.getElementById('rent-layer-main');
+    const rentChevron = document.getElementById('rent-layer-chevron');
+    const rentFiltersPanel = document.getElementById('rent-filters-panel');
+    const rentReplanSelect = document.getElementById('rent-replan-filter');
+    const rentFloorSelect = document.getElementById('rent-floor-filter');
+
+    const layerToggleBtn = document.getElementById('layer-toggle-btn');
+    let layersHidden = false;
+
+    const rentFilterState = {
+      replan: 'any',
+      floor: 'any',
+    };
+
     function setLayerVisibility(layerId, visible) {
       if (!map.getLayer(layerId)) return;
       map.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
@@ -356,6 +711,81 @@
       setLayerVisibility('wb-priority-zones-fill', visible);
       setLayerVisibility('wb-priority-zones-outline', visible);
     });
+
+    // раскрытие/сворачивание панели фильтров аренды по клику на текст "Аренда" или стрелку
+    function toggleRentFilters() {
+      if (!rentFiltersPanel) return;
+      const isHidden = rentFiltersPanel.style.display === 'none' || !rentFiltersPanel.style.display;
+      rentFiltersPanel.style.display = isHidden ? 'block' : 'none';
+      if (rentChevron) {
+        rentChevron.textContent = isHidden ? '▴' : '▾';
+      }
+    }
+
+    if (rentLayerMain && rentFiltersPanel) {
+      rentLayerMain.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        toggleRentFilters();
+      });
+    }
+    if (rentChevron) {
+      rentChevron.style.cursor = 'pointer';
+      rentChevron.title = 'Фильтры аренды';
+    }
+
+    function applyRentFilter() {
+      if (!map.getLayer('fund-lots-rent')) return;
+
+      const conds = [
+        ['!=', ['get', 'categoryId'], 12],
+        ['==', ['get', 'typeId'], 2],
+      ];
+
+      if (rentFilterState.replan === 'no') {
+        conds.push(['==', ['get', 'has_unauthorized_replan'], false]);
+      } else if (rentFilterState.replan === 'yes') {
+        conds.push(['==', ['get', 'has_unauthorized_replan'], true]);
+      }
+
+      if (rentFilterState.floor === '1') {
+        conds.push(['==', ['get', 'floorClass'], '1']);
+      } else if (rentFilterState.floor === '>=2') {
+        conds.push(['==', ['get', 'floorClass'], 'other']);
+      } else if (rentFilterState.floor === 'basement') {
+        conds.push(['==', ['get', 'floorClass'], 'basement']);
+      } else if (rentFilterState.floor === 'semi') {
+        conds.push(['==', ['get', 'floorClass'], 'semi']);
+      }
+
+      map.setFilter('fund-lots-rent', ['all', ...conds]);
+    }
+
+    if (rentReplanSelect) {
+      rentReplanSelect.addEventListener('change', () => {
+        rentFilterState.replan = rentReplanSelect.value;
+        applyRentFilter();
+      });
+    }
+
+    if (rentFloorSelect) {
+      rentFloorSelect.addEventListener('change', () => {
+        rentFilterState.floor = rentFloorSelect.value;
+        applyRentFilter();
+      });
+    }
+
+    // сворачивание/разворачивание всей панели слоёв
+    if (layerToggleBtn) {
+      layerToggleBtn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        layersHidden = !layersHidden;
+        const panel = document.getElementById('layer-controls');
+        if (!panel) return;
+        // уводим панель вправо, кнопка остаётся на месте
+        panel.style.transform = layersHidden ? 'translateX(120%)' : 'translateX(0)';
+        layerToggleBtn.textContent = layersHidden ? '❮' : '❯';
+      });
+    }
 
     function updateMatchesFilter() {
       if (!map.getLayer('fund-lots-matches')) return;
