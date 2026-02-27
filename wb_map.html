@@ -22,6 +22,9 @@
   const WB_STYLE_URL = 'https://wb-maps.wb.ru/api/tiles/style/lightberry-ru.json?key=a6BaPcWAU7k4TRMD6pXz';
   const LOTS_URL = 'lots.geojson'; // наши лоты фонда
 
+  // будущие полигоны Яндекс.Маркета (GeoJSON, генерируется отдельным конвертером vmap3 -> GeoJSON)
+  const YM_ZONES_URL = 'ym_zones.geojson';
+
   // локальный прокси для Яндекс.Маркета (слушает на 8001 порту)
   const YM_PROXY_BASE = 'http://72.56.106.171:8001/ym_recommended_buildings';
 
@@ -216,6 +219,34 @@
       'source-layer': 'data.priority_zone_united',
       paint: {
         'line-color': 'rgba(170, 0, 170, 0.9)',
+        'line-width': 1
+      }
+    });
+
+    // 2) Полигоны Яндекс.Маркета (конвертированный GeoJSON, если доступен)
+    // Формат YM_ZONES_URL: FeatureCollection с Polygon/MultiPolygon,
+    // совместимый с turf.booleanPointInPolygon.
+    map.addSource('ym-zones', {
+      type: 'geojson',
+      data: YM_ZONES_URL
+    });
+
+    map.addLayer({
+      id: 'ym-zones-fill',
+      type: 'fill',
+      source: 'ym-zones',
+      paint: {
+        'fill-color': 'rgba(0, 200, 0, 0.18)',
+        'fill-outline-color': 'rgba(0, 120, 0, 0.9)'
+      }
+    });
+
+    map.addLayer({
+      id: 'ym-zones-outline',
+      type: 'line',
+      source: 'ym-zones',
+      paint: {
+        'line-color': 'rgba(0, 120, 0, 0.9)',
         'line-width': 1
       }
     });
