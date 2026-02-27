@@ -25,9 +25,6 @@
   // будущие полигоны Яндекс.Маркета (GeoJSON, генерируется отдельным конвертером vmap3 -> GeoJSON)
   const YM_ZONES_URL = 'ym_zones.geojson';
 
-  // локальный прокси для Яндекс.Маркета (слушает на 8001 порту)
-  const YM_PROXY_BASE = 'http://72.56.106.171:8001/ym_recommended_buildings';
-
   const map = new maplibregl.Map({
     container: 'map',
     style: WB_STYLE_URL,
@@ -105,90 +102,6 @@
     });
   }
 
-  // -----------------------------
-  // ЯНДЕКС МАРКЕТ: точки LIGHTNING (до 400k) через локальный прокси
-  // -----------------------------
-
-  async function fetchYandexLightning() {
-    const bounds = map.getBounds();
-    const minLat = bounds.getSouth();
-    const maxLat = bounds.getNorth();
-    const minLon = bounds.getWest();
-    const maxLon = bounds.getEast();
-    const zoom = Math.round(map.getZoom());
-
-    const url = new URL(YM_PROXY_BASE);
-    url.searchParams.set('zoom', String(zoom));
-    url.searchParams.set('minLat', String(minLat));
-    url.searchParams.set('maxLat', String(maxLat));
-    url.searchParams.set('minLon', String(minLon));
-    url.searchParams.set('maxLon', String(maxLon));
-
-    console.log('YM proxy fetch:', url.toString());
-    const resp = await fetch(url.toString());
-    if (!resp.ok) {
-      console.error('YM proxy error:', resp.status, await resp.text());
-      return { type: 'FeatureCollection', features: [] };
-    }
-    const data = await resp.json();
-
-    // data: [{id, lat, lon, type}] — берём только LIGHTNING
-    const features = (data || [])
-      .filter(item => item && item.type === 'LIGHTNING')
-      .map(item => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [item.lon, item.lat],
-        },
-        properties: {
-          id: item.id,
-          type: item.type,
-        },
-      }));
-
-    console.log('YM LIGHTNING points:', features.length);
-
-    return {
-      type: 'FeatureCollection',
-      features,
-    };
-  }
-
-  async function initYandexLightningLayer() {
-    map.addSource('ym-lightning', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: [] },
-    });
-
-    map.addLayer({
-      id: 'ym-lightning-layer',
-      type: 'circle',
-      source: 'ym-lightning',
-      paint: {
-        'circle-radius': 6,
-        'circle-color': 'rgba(255, 215, 0, 0.7)',        // мягкий золотой
-        'circle-stroke-color': 'rgba(0, 0, 0, 0.3)',
-        'circle-stroke-width': 1,
-      }
-    });
-
-    try {
-      const fc = await fetchYandexLightning();
-      map.getSource('ym-lightning').setData(fc);
-    } catch (e) {
-      console.error('YM init error:', e);
-    }
-
-    map.on('moveend', async () => {
-      try {
-        const fc = await fetchYandexLightning();
-        map.getSource('ym-lightning').setData(fc);
-      } catch (e) {
-        console.error('YM moveend error:', e);
-      }
-    });
-  }
 
   map.on('load', () => {
     // 1) Источник с полигонами зон WB напрямую из их тайлов
@@ -252,7 +165,6 @@
     });
 
     loadLotsAndComputeInsideWB().catch(err => console.error('Lots init error', err));
-    initYandexLightningLayer().catch(err => console.error('YM layer error', err));
 
     map.on('click', 'fund-lots-layer', (e) => {
       const feature = e.features && e.features[0];
